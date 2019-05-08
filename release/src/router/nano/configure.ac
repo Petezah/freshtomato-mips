@@ -43,7 +43,7 @@ gl_INIT
 AC_PROG_LN_S
 AC_ISC_POSIX
 AC_SYS_LARGEFILE
-PKG_PROG_PKG_CONFIG
+#PKG_PROG_PKG_CONFIG
 
 dnl Internationalization macros.
 

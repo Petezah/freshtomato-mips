@@ -283,13 +283,19 @@ const struct mime_handler mime_handlers[] = {
 
 	{ "**.asp",			NULL,						0,	wi_generic_noid,	wo_asp,			1 },
 	{ "**.css",			"text/css",					12,	wi_generic_noid,	do_file,		1 },
-	{ "**.htm|**.html",	mime_html,		  		  	2,	wi_generic_noid,	do_file,		1 },
+	{ "**.htm|**.html",		mime_html,		  		2,	wi_generic_noid,	do_file,		1 },
 	{ "**.gif",			"image/gif",				12,	wi_generic_noid,	do_file,		1 },
 	{ "**.jpg",			"image/jpeg",				12,	wi_generic_noid,	do_file,		1 },
 	{ "**.png",			"image/png",				12,	wi_generic_noid,	do_file,		1 },
 	{ "**.js",			mime_javascript,			12,	wi_generic_noid,	do_file,		1 },
 	{ "**.jsx",			mime_javascript,			0,	wi_generic,			wo_asp,			1 },
 	{ "**.svg",			"image/svg+xml",			12,	wi_generic_noid,	do_file,		1 },
+
+// Required mimetype for fonts & icons
+	{ "**.woff",		"application/font-woff",		12,	wi_generic_noid,do_file,		1 },
+	{ "**.eot",			"application/vnd.ms-fontobject",12,	wi_generic_noid,do_file,		1 },
+	{ "**.ttf",			"application/octet-stream",	12,	wi_generic_noid,	do_file,		1 },
+
 	{ "**.txt",			mime_plain,					2,	wi_generic_noid,	do_file,		1 },
 	{ "**.bin",			mime_binary,				0,	wi_generic_noid,	do_file,		1 },
 	{ "**.bino",		mime_octetstream,			0,	wi_generic_noid,	do_file,		1 },
@@ -1214,8 +1220,15 @@ static const nvset_t nvset_list[] = {
 // admin-tomatoanon
 	{ "tomatoanon_answer",		V_RANGE(0, 1)			},
 	{ "tomatoanon_enable",		V_RANGE(-1, 1)			},
+	{ "tomatoanon_cru",		V_RANGE(1, 12)			},
 	{ "tomatoanon_id",		V_LENGTH(0, 32)			},
 	{ "tomatoanon_notify",		V_01				},
+
+// AdvancedTomato
+	{ "at_update",      V_LENGTH(0, 32)      },
+	{ "at_nav",         V_TEXT(0, 2048)      },
+	{ "at_nav_state",   V_LENGTH(0, 32)      },
+	{ "at_nav_action",  V_LENGTH(0, 32)      },
 
 // nas-usb - !!TB
 #ifdef TCONFIG_USB
@@ -1316,18 +1329,17 @@ static const nvset_t nvset_list[] = {
 	{ "qos_icmp",			V_01				},
 	{ "qos_udp",			V_01				},
 	{ "qos_reset",			V_01				},
-	{ "qos_pfifo",			V_01				}, // !!TB
-	{ "wan_qos_obw",		V_RANGE(10, 999999)		},
-	{ "wan_qos_ibw",		V_RANGE(10, 999999)		},
-	{ "wan2_qos_obw",		V_RANGE(10, 999999)		},
-	{ "wan2_qos_ibw",		V_RANGE(10, 999999)		},
+	{ "qos_pfifo",			V_NUM				}, // !!TB
+	{ "wan_qos_obw",		V_RANGE(10, 999999)	},
+	{ "wan_qos_ibw",		V_RANGE(10, 999999)	},
+	{ "wan2_qos_obw",		V_RANGE(10, 999999)	},
+	{ "wan2_qos_ibw",		V_RANGE(10, 999999)	},
 #ifdef TCONFIG_MULTIWAN
-	{ "wan3_qos_obw",		V_RANGE(10, 999999)		},
-	{ "wan3_qos_ibw",		V_RANGE(10, 999999)		},
-	{ "wan4_qos_obw",		V_RANGE(10, 999999)		},
-	{ "wan4_qos_ibw",		V_RANGE(10, 999999)		},
+	{ "wan3_qos_obw",		V_RANGE(10, 999999)	},
+	{ "wan3_qos_ibw",		V_RANGE(10, 999999)	},
+	{ "wan4_qos_obw",		V_RANGE(10, 999999)	},
+	{ "wan4_qos_ibw",		V_RANGE(10, 999999)	},
 #endif
-
 	{ "qos_orules",			V_LENGTH(0, 4096)	},
 	{ "qos_default",		V_RANGE(0, 9)		},
 	{ "qos_irates",			V_LENGTH(0, 128)	},
@@ -2084,5 +2096,3 @@ static void wo_nvcommit(char *url)
 	web_close();
 	nvram_commit();
 }
-
-
