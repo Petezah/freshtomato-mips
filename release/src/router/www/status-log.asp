@@ -1,82 +1,49 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<!--
-	Tomato GUI
-	Copyright (C) 2006-2010 Jonathan Zarate
-	http://www.polarcloud.com/tomato/
-
-	For use with Tomato Firmware only.
-	No part of this file may be used without permission.
--->
-<html>
-<head>
-<meta http-equiv="content-type" content="text/html;charset=utf-8">
-<meta name="robots" content="noindex,nofollow">
-<title>[<% ident(); %>] Status: Logs</title>
-<link rel="stylesheet" type="text/css" href="tomato.css">
-<% css(); %>
-<script type="text/javascript" src="tomato.js"></script>
-
-<!-- / / / -->
-
-<script type="text/javascript" src="debug.js"></script>
-
+<title>Router Logs</title>
+<content>
 <script type="text/javascript">
+	//<% nvram("at_update,tomatoanon_answer,log_file"); %>
 
-//	<% nvram("log_file"); %>
-
-function find() {
-	var s = E('find-text').value;
-	if (s.length) document.location = 'logs/view.cgi?find=' + escapeCGI(s) + '&_http_id=' + nvram.http_id;
-}
-
-function init() {
-	var e = E('find-text');
-	if (e) e.onkeypress = function(ev) {
-		if (checkEvent(ev).keyCode == 13) find();
+	function find()
+	{
+		var s = E('find-text').value;
+		if (s.length) document.location = 'logs/view.cgi?find=' + escapeCGI(s) + '&_http_id=' + nvram.http_id;
 	}
-}
+
+	function init()
+	{
+		var e = E('find-text');
+		if (e) e.onkeypress = function(ev) {
+			if (checkEvent(ev).keyCode == 13) find();
+			}
+	}
 </script>
 
-</head>
-<body onload="init()">
-<form id="t_fom" action="javascript:{}">
-<table id="container" cellspacing="0">
-<tr><td colspan="2" id="header">
-	<div class="title">Tomato</div>
-	<div class="version">Version <% version(); %></div>
-</td></tr>
-<tr id="body"><td id="navi"><script type="text/javascript">navi()</script></td>
-<td id="content">
-<div id="ident"><% ident(); %></div>
+<div class="box">
+	<div class="heading">View Router Logs 
+		<a class="ajaxload pull-right" data-toggle="tooltip" title="Configure Logging" href="#admin-log.asp"><i class="icon-system"></i></a>
+	</div>
+	<div class="content">
 
-<!-- / / / -->
+		<div id="logging">
+			<div class="section">
+				<a href="logs/view.cgi?which=25&_http_id=<% nv(http_id) %>">View Last 25 Lines</a><br />
+				<a href="logs/view.cgi?which=50&_http_id=<% nv(http_id) %>">View Last 50 Lines</a><br />
+				<a href="logs/view.cgi?which=100&_http_id=<% nv(http_id) %>">View Last 100 Lines</a><br />
+				<a href="logs/view.cgi?which=all&_http_id=<% nv(http_id) %>">View All</a><br /><br />
+				<div class="input-append"><input class="span3" type="text" maxsize="32" id="find-text"> <button value="Find" onclick="find()" class="btn">Find <i class="icon-search"></i></button></div>
+				<i>Search through available log files for specific text and display matched rows</i>
+				<br><br /><hr>
+				<a class="btn btn-primary" href="logs/syslog.txt?_http_id=<% nv(http_id) %>">Download Log File <i class="icon-download"></i></a>
+			</div>
+		</div>
 
-<div class="section-title">Logs</div>
-<div id="logging">
-	<div class="section">
-		<a href="logs/view.cgi?which=25&amp;_http_id=<% nv(http_id) %>">View Last 25 Lines</a><br/>
-		<a href="logs/view.cgi?which=50&amp;_http_id=<% nv(http_id) %>">View Last 50 Lines</a><br/>
-		<a href="logs/view.cgi?which=100&amp;_http_id=<% nv(http_id) %>">View Last 100 Lines</a><br/>
-		<a href="logs/view.cgi?which=all&amp;_http_id=<% nv(http_id) %>">View All</a><br/><br/>
-		<a href="logs/syslog.txt?_http_id=<% nv(http_id) %>">Download Log File</a><br/><br/>
-		<input type="text" maxlength="32" size="33" id="find-text"> <input type="button" value="Find" onclick="find()"><br/>
-		<br/><br/>
-		&raquo; <a href="admin-log.asp">Logging Configuration</a><br/><br/>
 	</div>
 </div>
 
 <script type="text/javascript">
-if (nvram.log_file != '1') {
-	W('<div class="note-disabled"><b>Internal logging disabled.<\/b><br /><br /><a href="admin-log.asp">Enable &raquo;<\/a><\/div>');
-	E('logging').style.display = 'none';
-}
+	if (nvram.log_file != '1') {
+		$('#logging').before('<div class="alert alert-info">Internal logging disabled.</b><br><br><a href="admin-log.asp">Enable &raquo;</a></div>');
+		E('logging').style.display = 'none';
+	}
 </script>
-
-<!-- / / / -->
-
-</td></tr>
-<tr><td id="footer" colspan="2">&nbsp;</td></tr>
-</table>
-</form>
-</body>
-</html>
+<script type="text/javascript">init()</script>

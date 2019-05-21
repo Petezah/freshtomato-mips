@@ -1,44 +1,37 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-<title>NGINX Server Testpage</title>
-<meta content="iso-8859-1" http-equiv="charset">
-<meta name="author" content="Vicente Soriano, Tomato RAF, mail:victek@tomatoraf.com">
-<meta name="description" content="No part of this code can be modified without explicit consent from the author">
-<meta name="description" content="You MUST keep this page as test page for webserver if you build or integrate this feature in your firmware">
-<style type="text/css">
-body {
-	background:#121b1d url(tomatousb_bg.png);
-	width:auto;
-	height:100%;
-	font:12px helvetica arial sans-serif;
-	color:white;
-}
-body a {
-  color:white;
-}
-</style>
-</head>
-<body>
-	<div style="text-align:center;font:32px arial;color:#ffffff;font-weight:bold">
-		<a href="http://openlinksys.info"><img src="openlinksys.png" alt=""></a><br /><br />
-		NGINX Server<br />
-	</div>
-	<div style="text-align:center;font:18px arial;">
-		<br />
-		Author is not responsible for the usage of this module !
-	</div>
-	<div style="text-align:center">
-		<br /><br />
-		<a href="phpinfo.php">[ Show PHPinfo ]</a>
-	</div>
-	<div style="text-align:center">
-		<br /><br />
-		<a href="adminer.php">[ MySQL Adminer ]</a>
-	</div>
-	<div style="text-align:center">
-		<br /><br />
-		<a href="http://victek.is-a-geek.com/">[ Developper link ]</a>
-	</div>
-</body>
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>NGINX Web Server</title>
+
+		<!-- Stylesheets -->
+		<link href="css/interface.css" rel="stylesheet">
+
+
+		<!-- Load Favicon (icon) -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+
+		<!-- One time load JAVASCRIPT -->
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+
+	</head>
+	<body>
+
+		<div id="wrapper">
+			<div style="max-width: 960px; margin: 50px auto; text-align: center;">
+				<h1 style="font-size: 28px;">NGINX Web Server</h1>
+				<p style="font-size: 15px;">If you see this page, the next  web server is successfully installed and working. Further configuration is required.
+					For online documentation and support please refer to <a target="_blank" href="http://nginx.org">nginx.org</a>. Commercial support is available at <a target="_blank" href="http://nginx.com">nginx.com</a>
+				</p>
+
+				<br>
+				<a href="phpinfo.php" class="btn btn-info"><i class="icon-info"></i> Show PHP Info</a>
+				<a href="adminer.php" class="btn btn-primary"><i class="icon-tools"></i> MySQL Adminer</a>                                               
+			</div>
+
+		</div>
+
+	</body>
+
 </html>

@@ -1,331 +1,129 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <!--
-	Tomato GUI
+Tomato GUI
 
-	For use with Tomato Firmware only.
-	No part of this file may be used without permission.
--->
-<html>
-<head>
-<meta http-equiv="content-type" content="text/html;charset=utf-8">
-<meta name="robots" content="noindex,nofollow">
-<title>[<% ident(); %>] Tools: System Commands</title>
-<link rel="stylesheet" type="text/css" href="tomato.css">
-<% css(); %>
-<script type="text/javascript" src="tomato.js"></script>
-/* TERMLIB-BEGIN */
-<script type="text/javascript" src="termlib_min.js"></script>
-/* TERMLIB-END */
+For use with Tomato Firmware only.
+No part of this file may be used without permission.
+--><title>System Commands</title>
+<content>
+	<style>
+		.sectionshell { margin-top: 10px; }
+		textarea { width: 80%; height: 35px; }
+		table tr td:first-child { width: 150px; }
+		pre { max-height: 400px; overflow: auto; }
+	</style>
+	<script type="text/javascript">
+		var cmdresult = '';
+		var cmd = null;
 
-<!-- / / / -->
+		var ref = new TomatoRefresh('/update.cgi', '', 0, 'tools-shell_refresh');
 
-<style type="text/css">
-/* TERMLIB0-BEGIN */
-textarea {
-	font: 12px monospace;
-	width: 99%;
-	height: 12em;
-}
-/* TERMLIB0-END */
-/* TERMLIB-BEGIN */
-#icommandsFromMobile {
-	font-size: 32px;
-	width: 512px;
-}
-
-.helperButton{
-	font-size: 32px;
-	height:64px;
-	width:259px;
-}
-.lh15 {
-	line-height: 15px;
-}
-
-.term {
-	font-family: "Courier New",courier,fixed,monospace;
-	font-size: 12px;
-	color: #d3d3d3;
-	background: none;
-	letter-spacing: 1px;
-}
-.term .termReverse {
-	color: #232e45;
-	background: #95a9d5;
-}
-/* TERMLIB-END */
-</style>
-
-<script type="text/javascript" src="debug.js"></script>
-<script type="text/javascript">
-
-//	<% nvram(''); %>	// http_id
-
-/* TERMLIB0-BEGIN */
-var cmdresult = '';
-var cmd = null;
+		ref.refresh = function(text)
+		{
+			execute();
+		}
 
 
-var ref = new TomatoRefresh('update.cgi', '', 0, 'tools-shell_refresh');
+		function verifyFields(focused, quiet)
+		{
+			return 1;
+		}
 
-ref.refresh = function(text) {
-	execute();
-}
-/* TERMLIB0-END */
-
-/* TERMLIB-BEGIN */
-var term;
-var working_dir = '/www';
-/* TERMLIB-END */
-
-function verifyFields(focused, quiet) {
-	return 1;
-}
-
-/* TERMLIB0-BEGIN */
-function escapeText(s) {
-	function esc(c) {
-		return '&#' + c.charCodeAt(0) + ';';
-	}
-	return s.replace(/[&"'<>]/g, esc).replace(/ /g, '&nbsp;'.replace(/\n/g, ' <br />'));
-}
-
-function spin(x) {
-	E('execb').disabled = x;
-	E('_f_cmd').disabled = x;
-	E('wait').style.visibility = x ? 'visible' : 'hidden';
-	if (!x) cmd = null;
-}
-
-function updateResult() {
-	E('result').innerHTML = '<tt>' + escapeText(cmdresult) + '<\/tt>';
-	cmdresult = '';
-	spin(0);
-}
-
-function execute() {
-	// Opera 8 sometimes sends 2 clicks
-	if (cmd) return;
-	spin(1);
-
-	cmd = new XmlHttp();
-	cmd.onCompleted = function(text, xml) {
-		eval(text);
-		updateResult();
-	}
-	cmd.onError = function(x) {
-		cmdresult = 'ERROR: ' + x;
-		updateResult();
-	}
-
-	var s = E('_f_cmd').value;
-	cmd.post('shell.cgi', 'action=execute&command=' + escapeCGI(s.replace(/\r/g, '')));
-	cookie.set('shellcmd', escape(s));
-}
-
-function init() {
-	var s;
-	if ((s = cookie.get('shellcmd')) != null) E('_f_cmd').value = unescape(s);
-}
-/* TERMLIB0-END */
-
-/* TERMLIB-BEGIN */
-function termOpen() {
-	if ((!term) || (term.closed)) {
-		term = new Terminal(
-			{
-				cols: 94,
-				rows: 35,
-				mapANSI: true,
-				crsrBlinkMode: true,
-				closeOnESC: false,
-				termDiv: 'termDiv',
-				handler: termHandler,
-				initHandler: initHandler,
-				wrapping: true
+		function escapeText(s)
+		{
+			function esc(c) {
+				return '&#' + c.charCodeAt(0) + ';';
 			}
-		);
-		term.open();
-	}
-	window.addEventListener("paste", function(thePasteEvent) {
-		if (term) {
-			let clipboardData, pastedData;
-			thePasteEvent.stopPropagation();
-			thePasteEvent.preventDefault();
-			clipboardData = thePasteEvent.clipboardData || window.clipboardData;
-			pastedData = clipboardData.getData('Text');
-			TermGlobals.importMultiLine(pastedData);
+			return s.replace(/[&"'<>]/g, esc).replace(/\n/g, ' <br>').replace(/ /g, '&nbsp;');
 		}
-	}, false);
-}
 
-function initHandler() {
-	term.write('%+r FreshTomato Web Shell ready. %-r \n\n');
-	runCommand('mymotd');
-}
-
-function showWait(state) {
-	E('wait').style.visibility = state ? 'visible' : 'hidden';
-}
-
-function termHandler() {
-	this.newLine();
-
-	this.lineBuffer = this.lineBuffer.replace(/^\s+/, '');
-	if (this.lineBuffer.startsWith("cd ")) {
-		let tmp = this.lineBuffer.slice(3);
-
-		if (tmp === ".") {
-			return; /* nothing to do here.. */
-		} else if (tmp === "..") {
-			workingDirUp();
-			term.write('%+r Switching to directory %+b' + working_dir + '%-b %-r \n');
-			term.prompt();
-		} else {
-			checkDirectoryExist(tmp);
+		function spin(x)
+		{
+			E('execb').disabled = x;
+			E('_f_cmd').disabled = x;
+			E('wait').style.visibility = x ? 'visible' : 'hidden';
+			if (!x) cmd = null;
 		}
-	} else if (this.lineBuffer === "clear") {
-		term.clear();
-		term.prompt();
-	} else {
-		runCommand(this.lineBuffer);
-	}
-	return;
-}
 
-function checkDirectoryExist(directoryToCheck) {
-	let cmd = new XmlHttp();
-	cmd.onCompleted = function(text, xml) {
-		if (text.trim() === "OK") {
-			if (!directoryToCheck.startsWith("/")) {
-				working_dir = working_dir + "/" + directoryToCheck;
+		function updateResult()
+		{
+			E('result').innerHTML = '<tt>' + escapeText(cmdresult) + '</tt>';
+			cmdresult = '';
+			spin(0);
+		}
+
+		function execute()
+		{
+			// Opera 8 sometimes sends 2 clicks
+			if (cmd) return;
+			spin(1);
+
+			cmd = new XmlHttp();
+			cmd.onCompleted = function(text, xml) {
+				eval(text);
+				updateResult();
+			}
+			cmd.onError = function(x) {
+				cmdresult = 'ERROR: ' + x;
+				updateResult();
+			}
+
+			var s = E('_f_cmd').value;
+			cmd.post('shell.cgi', 'action=execute&command=' + escapeCGI(s.replace(/\r/g, '')));
+			cookie.set('shellcmd', escape(s));
+		}
+
+		function init()
+		{
+			var s;
+			if ((s = cookie.get('shellcmd')) != null) E('_f_cmd').value = unescape(s);
+
+			if (((s = cookie.get('tools_shell_notes_vis')) != null) && (s == '1')) {
+				toggleVisibility("notes");
+			}
+
+			$('#refresh').append(genStdRefresh(1,1,"ref.toggle()"));
+		}
+
+		function toggleVisibility(whichone) {
+			if (E('sesdiv_' + whichone).style.display == '') {
+				E('sesdiv_' + whichone).style.display = 'none';
+				E('sesdiv_' + whichone + '_showhide').innerHTML = '<i class="icon-chevron-up"></i>';
+				cookie.set('status_overview_' + whichone + '_vis', 0);
 			} else {
-				working_dir = directoryToCheck;
+				E('sesdiv_' + whichone).style.display='';
+				E('sesdiv_' + whichone + '_showhide').innerHTML = '<i class="icon-chevron-down"></i>';
+				cookie.set('status_overview_' + whichone + '_vis', 1);
 			}
-			term.write('%+r Switching to directory %+b' + working_dir + '%-b %-r \n');
-		} else {
-			term.write( '%+r%c(red) ERROR directory ' + directoryToCheck + ' does not exist %c(default)%-r' );
 		}
-		showWait(false);
-		term.prompt();
-	}
-	cmd.onError = function(text) {
-		term.write( '%c(red) ERROR during switching directory: ' + text + ' %c(default)' );
-		showWait(false);
-		term.prompt();
-	}
 
-	showWait(true);
-	if (!directoryToCheck.startsWith("/")) {
-		directoryToCheck = working_dir + "/" + directoryToCheck;
-	}
-	cmd.post('shell.cgi', 'action=execute&nojs=1&command=' + escapeCGI("[ -d \"" + directoryToCheck + "\" ] && echo \"OK\""));
-}
+	</script>
 
-function workingDirUp() {
-	let tmp = working_dir.split("/");
-	if (tmp.length > 1) {
-		tmp.pop();
-		working_dir = tmp.join("/");
-		if (working_dir === "") { /* it was last dir; */
-			working_dir = "/";
-		}
-	}
-}
+	<ul class="nav-tabs">
+		<li><a class="ajaxload" href="tools-ping.asp"><i class="icon-ping"></i> Ping</a></li>
+		<li><a class="ajaxload" href="tools-trace.asp"><i class="icon-gauge"></i> Trace</a></li>
+		<li><a class="active"><i class="icon-cmd"></i> System Commands</a></li>
+		<li><a class="ajaxload" href="tools-survey.asp"><i class="icon-signal"></i> Wireless Survey</a></li>
+		<li><a class="ajaxload" href="tools-wol.asp"><i class="icon-wake"></i> WOL</a></li>
+	</ul>
 
-function runCommand(command) {
-	let cmd = new XmlHttp();
-	cmd.onCompleted = function(text, xml) {
-		term.write(text.split('\n'), true);
-		showWait(false);
-	}
-	cmd.onError = function(text) {
-		term.type( '> ERROR: ' + text, 17 );
-		showWait(false);
-		term.prompt();
-	}
+	<div class="box">
+		<div class="heading">System Shell</div>
+		<div class="content">
+			<div id="command-form"></div><hr>
 
-	showWait(true);
-	cmd.post('shell.cgi', 'action=execute&nojs=1&working_dir=' + working_dir + '&command=' + escapeCGI(command));
-}
+			<div style="visibility:hidden;" id="wait">Please wait... <span class="spinner"></span></div>
+			<pre id="result"></pre>
 
-function fakecommand() {
-	let command = E('icommandsFromMobile').value;
-	for (var i=0; i<command.length; i++) {
-		Terminal.prototype.globals.keyHandler({which: command.charCodeAt(i), _remapped:true});
-	}
-	sendCR();
-	E('icommandsFromMobile').value = '';
-	E('icommandsFromMobile').focus();
-}
+			<script type="text/javascript">
+				$('#command-form').forms([
+					{ title: 'Command', help:'Use the command &quot;nvram export --set&quot; or &quot;nvram export --set | grep qos&quot; to cut and paste configuration',
+						name: 'f_cmd', type: 'textarea', wrap: 'off', value: '', style: 'width: 100%; height: 80px;' }
+					], { grid: ['col-sm-2', 'col-sm-10'] });
+			</script>
+		</div>
+	</div>
 
-function sendSpace() {
-	Terminal.prototype.globals.keyHandler({which: 32, _remapped:false});
-	sendCR();
-}
+	<div id="refresh"></div><button type="button" value="Execute" onclick="execute()" id="execb" class="btn">Execute <i class="icon-cmd"></i></button>
 
-function sendCR() {
-	Terminal.prototype.globals.keyHandler({which: 0x0D, _remapped:false});
-}
-
-function toggleHWKeyHelper() {
-	E('noHWKeyHelperDiv').style.visibility = 'visible';
-	E('noHWKeyHelperLink').style.visibility = 'hidden';
-}
-/* TERMLIB-END */
-</script>
-
-</head>
-
-/* TERMLIB0-BEGIN */
-<body onload="init()">
-/* TERMLIB0-END */
-/* TERMLIB-BEGIN */
-<body onload="termOpen()">
-/* TERMLIB-END */
-<form action="javascript:{}">
-<table id="container" cellspacing="0">
-<tr><td colspan="2" id="header">
-	<div class="title">Tomato</div>
-	<div class="version">Version <% version(); %></div>
-</td></tr>
-<tr id="body"><td id="navi"><script type="text/javascript">navi()</script></td>
-<td id="content">
-<div id="ident"><% ident(); %></div>
-
-<!-- / / / -->
-
-<div class="section-title">Execute System Commands</div>
-<div class="section">
-/* TERMLIB0-BEGIN */
-<script type="text/javascript">
-createFieldTable('', [
-	{ title: 'Command', name: 'f_cmd', type: 'textarea', wrap: 'pre', value: '' }
-]);
-</script>
-<div style="float:left"><input type="button" value="Execute" onclick="execute()" id="execb"></div>
-<script type="text/javascript">genStdRefresh(1,5,'ref.toggle()');</script>
-/* TERMLIB0-END */
-/* TERMLIB-BEGIN */
-<div id="termDiv"></div>
-/* TERMLIB-END */
-</div>
-/* TERMLIB-BEGIN */
-<a href="#" onclick="toggleHWKeyHelper();" id="noHWKeyHelperLink">No hardware keyboard</a>
-<div style="visibility:hidden;text-align:left" id="noHWKeyHelperDiv">
-	<input type="button" class="helperButton" onclick="fakecommand()" value="Enter">
-	<input type="button" class="helperButton" onclick="sendSpace()" value="Space"><br>
-	<input type="text" id="icommandsFromMobile" name="commandsFromMobile" spellcheck="false" style="text-transform:none">
-</div>
-/* TERMLIB-END */
-<div style="visibility:hidden;text-align:right" id="wait">Please wait... <img src="spin.gif" alt="" style="vertical-align:top"></div>
-<pre id="result"></pre>
-
-<!-- / / / -->
-
-</td></tr>
-<tr><td id="footer" colspan="2">&nbsp;</td></tr>
-</table>
-</form>
-</body>
-</html>
+	<script type="text/javascript">init();</script>
+</content>

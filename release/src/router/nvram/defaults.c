@@ -898,6 +898,10 @@ const defaults_t defaults[] = {
 	{ "tomatoanon_answer",		"0"				},
 	{ "tomatoanon_id",		""				},
 	{ "tomatoanon_notify",		"1"				},
+    
+// AdvancedTomato
+    { "at_update",    ""    },
+    { "at_navi",      "default"    },
 
 #ifdef TCONFIG_USB
 // nas-usb - !!TB

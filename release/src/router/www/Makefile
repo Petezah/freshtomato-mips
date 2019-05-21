@@ -6,63 +6,83 @@ all:
 clean:
 
 install:
+# Create initial folders
 	rm -rf $(INSTALLDIR)/www
-	mkdir -p $(INSTALLDIR)/www
+	mkdir -p $(INSTALLDIR)/www			
+	mkdir -p $(INSTALLDIR)/www/js
+	mkdir -p $(INSTALLDIR)/www/css
+	mkdir -p $(INSTALLDIR)/www/css/schemes
 
-	cp *.gif *.png *.ico *.html *.php robots.txt $(INSTALLDIR)/www
+# Copy files we don't want to modify to new install directory
+	cp *.ico *.html *.php robots.txt tux.png $(INSTALLDIR)/www
 
-# Squish some of the files by trimming whitespace...
-
-	for F in $(wildcard *.js *.jsx); do \
+# Copy JS files to the installdir and squish files by trimming whitespace
+	for F in $(wildcard js/*.js js/*.jsx *.js *.jsx); do \
 		sed '/^\/\*\s*$$/,/\*\//! { s/^\s\+//; s/\s\+$$//; /^\/\/ --\+\s*/d; /^$$/d }' < $$F > $(INSTALLDIR)/www/$$F; \
 	done
 
-	for F in $(wildcard *.css); do \
+# Copy CSS files to the installdir and squish files by trimming whitespace
+	for F in $(wildcard css/schemes/*.css css/*.css *.css); do \
 		sed '/^\/\*\s*$$/,/\*\//! { s/\s\+/ /g; s/^\s\+//; s/\s\+$$//; /^$$/d }' < $$F > $(INSTALLDIR)/www/$$F; \
 	done
 
-# Remove "debug.js" references, convert color.css, remove comments
+# Copy asp files to the installdir	
+# remove "debug.js" references, convert color.css, remove comments
 # in between REMOVE-BEGIN and REMOVE-END, and compress whitespace
+# (and copy them to the INSTALLDIR)
+#
+# The expressions to delete comments from asp files are placed further down the Makefile, to affect not only these
+# asp files
+# 			-e "s,<!-- / / / -->,," \
+#			-e "/^<!--$$/,/^-->$$/! { s,^\s\+, , }" 
+#
 
 	for F in $(wildcard *.asp *.svg); do \
 		sed	-e "/REMOVE-BEGIN/,/REMOVE-END/d" \
 			-e "s,<script[^>]\+debug\.js[^>]\+></script>,," \
-			-e "s,<link[^>]\+href=\"color\.css\">,<% css(); %>," \
+			-e "s,<link[^>]\+href='color\.css'>,<% css(); %>," \
 			-e "s,color\.css,<% nv('web_css'); %>\.css," \
-			-e "s,<!-- / / / -->,," \
 			-e "s,\x0d,," \
 			-e "s,^\s\+,," \
 			-e "/^$$/d" \
-			-e "/^<!--$$/,/^-->$$/d" \
-			-e "/^<!--$$/,/^-->$$/! { s,^\s\+, , }" $$F > $(INSTALLDIR)/www/$$F; \
+			$$F > $(INSTALLDIR)/www/$$F; \
 	done
 
+#-------------------------------- COMPILER DIRECTIVES -----------------------------------------------
 # Only include Linux 2.6 options if building for Linux 2.6.
 ifneq ($(CONFIG_LINUX26),y)
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp *.js); do \
+	for F in $(wildcard *.asp *.js js/*.js js/*.jsx); do \
 		sed -i $$F -e "/LINUX26-BEGIN/,/LINUX26-END/d"; \
 	done
 # But remove some K24 options if building for Linux 2.6.
 else
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp *.js); do \
+	for F in $(wildcard *.asp *.js js/*.js js/*.jsx); do \
 		sed -i $$F -e "/LINUX24-BEGIN/,/LINUX24-END/d"; \
 	done
 endif
 
-# Only include  MultiWAN options if MULTIWAN is configured in.
+#only include  MultiWAN options if MULTIWAN is configured in.
 ifneq ($(TCONFIG_MULTIWAN),y)
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp *.js *.jsx); do \
+	for F in $(wildcard *.asp *.js *.jsx js/*.js js/*.jsx); do \
 		sed -i $$F -e "/MULTIWAN-BEGIN/,/MULTIWAN-END/d"; \
 	done
-# Or remove dualwan options
+# or remove dualwan options
 else
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp *.js *.jsx); do \
+	for F in $(wildcard *.asp *.js *.jsx js/*.js js/*.jsx); do \
 		sed -i $$F -e "/DUALWAN-BEGIN/,/DUALWAN-END/d"; \
 	done
+endif
+
+ifeq ($(TCONFIG_MIPSR2),y)
+	sed -i $(INSTALLDIR)/www/tomato.js -e "/MIPSR1-BEGIN/,/MIPSR1-END/d"
+	rm -f $(INSTALLDIR)/www/advanced-vlan-r1.asp
+else
+	sed -i $(INSTALLDIR)/www/tomato.js -e "/MIPSR2-BEGIN/,/MIPSR2-END/d"
+	rm -f $(INSTALLDIR)/www/advanced-vlan.asp
 endif
 
 # Only include the CIFS pages if CIFS is configured in.
@@ -92,6 +112,11 @@ ifneq ($(TCONFIG_EMF),y)
 	sed -i $(INSTALLDIR)/www/advanced-routing.asp -e "/EMF-BEGIN/,/EMF-END/d"
 endif
 
+# Only include sd/mmc card support if MICROSD is configured in.
+ifneq ($(TCONFIG_MICROSD),y)
+	sed -i $(INSTALLDIR)/www/nas-usb.asp -e "/MICROSD-BEGIN/,/MICROSD-END/d"
+endif
+
 # Only include NTFS settings if NTFS support is configured in.
 ifneq ($(TCONFIG_NTFS),y)
 	sed -i $(INSTALLDIR)/www/nas-usb.asp -e "/NTFS-BEGIN/,/NTFS-END/d"
@@ -115,7 +140,7 @@ endif
 # Victek for RAF verion
 # Only include Captive Portal menu option and pages when configured.
 ifneq ($(TCONFIG_NOCAT),y)
-	rm -f $(INSTALLDIR)/www/splashd.asp
+	rm -f $(INSTALLDIR)/www/advanced-splashd.asp
 	rm -f $(INSTALLDIR)/www/splash.html
 	rm -f $(INSTALLDIR)/www/style.css
 	sed -i $(INSTALLDIR)/www/tomato.js -e "/NOCAT-BEGIN/,/NOCAT-END/d"
@@ -133,7 +158,6 @@ ifneq ($(TCONFIG_NGINX),y)
 	sed -i $(INSTALLDIR)/www/about.asp -e "/NGINX-BEGIN/,/NGINX-END/d"
 endif
 
-
 # Only include HFS/HFS+ option and pages when configured.
 ifneq ($(TCONFIG_HFS),y)
 	sed -i $(INSTALLDIR)/www/nas-usb.asp -e "/HFS-BEGIN/,/HFS-END/d"
@@ -143,7 +167,7 @@ endif
 # Only include IPv6 options if IPv6 is configured in.
 ifneq ($(TCONFIG_IPV6),y)
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp *.js *.jsx); do \
+	for F in $(wildcard js/*.js js/*.jsx *.asp *.js *.jsx); do \
 		[ -f $(INSTALLDIR)/www/$$F ] && sed -i $$F \
 		-e "/IPV6-BEGIN/,/IPV6-END/d" \
 		|| true; \
@@ -152,11 +176,9 @@ ifneq ($(TCONFIG_IPV6),y)
 endif
 
 # Only include the Transmission binary path select if Transmission binaries is configured in.
-# Also only then (when libcurl is included), let to choose curl as a connection checker.
 ifneq ($(TCONFIG_BBT),y)
 	sed -i $(INSTALLDIR)/www/nas-bittorrent.asp -e "/BBT-BEGIN/,/BBT-END/d"
 	sed -i $(INSTALLDIR)/www/about.asp -e "/BBT-BEGIN/,/BBT-END/d"
-	sed -i $(INSTALLDIR)/www/basic-network.asp -e "/BBT-BEGIN/,/BBT-END/d"
 endif
 
 # Only include the Transmission pages if Transmission is configured in.
@@ -181,17 +203,21 @@ ifneq ($(TCONFIG_TOR),y)
 	sed -i $(INSTALLDIR)/www/about.asp -e "/TOR-BEGIN/,/TOR-END/d"
 endif
 
-
-
 # Only include the USB and NAS pages if USB Support is configured in.
 ifneq ($(TCONFIG_USB),y)
 	rm -f $(INSTALLDIR)/www/nas-*.*
-	rm -f $(INSTALLDIR)/www/wwan_parser.js
 	sed -i $(INSTALLDIR)/www/tomato.js -e "/USB-BEGIN/,/USB-END/d"
-	sed -i $(INSTALLDIR)/www/status-overview.asp -e "/USB-BEGIN/,/USB-END/d"
 	sed -i $(INSTALLDIR)/www/admin-buttons.asp -e "/USB-BEGIN/,/USB-END/d"
 	sed -i $(INSTALLDIR)/www/admin-access.asp -e "/USB-BEGIN/,/USB-END/d"
 	sed -i $(INSTALLDIR)/www/about.asp -e "/USB-BEGIN/,/USB-END/d"
+endif
+
+# Only include the USB and NAS pages if REMOVE_USBAPP is NOT configured in.
+ifeq ($(TCONFIG_REMOVE_USBAPP),y)
+	rm -f $(INSTALLDIR)/www/nas-*.*
+	sed -i $(INSTALLDIR)/www/tomato.js -e "/USB-BEGIN/,/USB-END/d"
+	sed -i $(INSTALLDIR)/www/admin-buttons.asp -e "/USB-BEGIN/,/USB-END/d"
+	sed -i $(INSTALLDIR)/www/admin-access.asp -e "/USB-BEGIN/,/USB-END/d"
 endif
 
 ## Only include CTF option if CTF module exists
@@ -201,38 +227,6 @@ endif
 ifneq ($(TCONFIG_CTF),y)
 	sed -i $(INSTALLDIR)/www/advanced-misc.asp -e "/CTF-BEGIN/,/CTF-END/d"
 endif
-
-	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp); do \
-		sed -e "s,<div class=\"title\">Tomato</div>,<div class=\"title\">FreshTomato</div>," $$F > $$F.tmp; \
-		mv $$F.tmp $$F; \
-	done
-
-ifeq ($(TOMATO_EXPERIMENTAL),1)
-	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp); do \
-		sed -e "s,<div class=\"title\">FreshTomato</div>,<div class=\"title\">FreshTomato <small><i>(beta)</i></small></div>," $$F > $$F.tmp; \
-		mv $$F.tmp $$F; \
-	done
-endif
-
-	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp); do \
-		sed -e "s,<div class=\"version\">Version <% version(); %></div>,<div class=\"version\">Version <% version(); %> by FreshTomato team</div>," $$F > $$F.tmp; \
-		mv $$F.tmp $$F; \
-	done
-
-# Remove from html obsolete stuff
-	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp); do \
-		sed     -e "s,<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">,<!DOCTYPE html>," \
-			-e "s,<script type=\"text/javascript\",<script," \
-			-e "s,<style type=\"text/css\">,<style>," \
-			-e "s,<html>,<html lang=\"en-GB\">," \
-			-e "s,<form action=\"\">,<form>," \
-			-e "s,<table id=\"container\" cellspacing=\"0\">,<table id=\"container\">," $$F > $$F.tmp; \
-		mv $$F.tmp $$F; \
-	done
 
 # Only include the vpn pages if OpenVPN is compiled in
 # Remove AES ciphers from the GUI if openssl doesn't have an AES directory
@@ -244,7 +238,7 @@ ifeq ($(TCONFIG_OPENVPN),y)
 else
 	rm -f $(INSTALLDIR)/www/vpn-server.asp
 	rm -f $(INSTALLDIR)/www/vpn-client.asp
-	rm -f $(INSTALLDIR)/www/vpn.js
+	rm -f $(INSTALLDIR)/www/js/vpn.js
 	sed -i $(INSTALLDIR)/www/tomato.js -e "/ OPENVPN-BEGIN/,/ OPENVPN-END/d"
 	sed -i $(INSTALLDIR)/www/about.asp -e "/ OPENVPN-BEGIN/,/ OPENVPN-END/d"
 endif
@@ -304,45 +298,26 @@ else
 	sed -i $(INSTALLDIR)/www/about.asp -e "/DNSCRYPT-BEGIN/,/DNSCRYPT-END/d"
 endif
 
-# Only include the stubby option if is compiled in
-ifneq ($(TCONFIG_STUBBY),y)
-	sed -i $(INSTALLDIR)/www/basic-network.asp -e "/STUBBY-BEGIN/,/STUBBY-END/d"
-endif
+#-------------------------------- END COMPILER DIRECTIVES -----------------------------------------------
+# Images
+	mkdir -p $(INSTALLDIR)/www/img
+	cp -r img/* $(INSTALLDIR)/www/img/.
 
-# Only include the Iperf page if it is compiled in
-ifneq ($(TCONFIG_IPERF),y)
-	rm -f $(INSTALLDIR)/www/tools-iperf.asp
-	sed -i $(INSTALLDIR)/www/tomato.js -e "/IPERF-BEGIN/,/IPERF-END/d"
-endif
-
-# Only include the https option if it is compiled in
-ifneq ($(TCONFIG_HTTPS),y)
-	sed -i $(INSTALLDIR)/www/admin-access.asp -e "/HTTPS-BEGIN/,/HTTPS-END/d"
-endif
-
-# Only include the TLS keys generator option if it is compiled in
-ifeq ($(TCONFIG_OPENVPN),y)
-ifneq ($(TCONFIG_KEYGEN),y)
-	sed -i $(INSTALLDIR)/www/vpn-server.asp -e "/KEYGEN-BEGIN/,/KEYGEN-END/d"
-endif
-endif
-
-# Only include the Termlib based tools-shell.asp option if it is compiled in
-ifneq ($(TCONFIG_TERMLIB),y)
-	rm -f $(INSTALLDIR)/www/termlib_min.js
-	sed -i $(INSTALLDIR)/www/tools-shell.asp -e "/TERMLIB-BEGIN/,/TERMLIB-END/d"
-else
-	sed -i $(INSTALLDIR)/www/tools-shell.asp -e "/TERMLIB0-BEGIN/,/TERMLIB0-END/d"
-endif
-
-# Clean-up compiler directives
+# Fonts
+	mkdir -p $(INSTALLDIR)/www/css/fonts
+	cp -r css/fonts/* $(INSTALLDIR)/www/css/fonts/.
+		
+# clean up compiler directives
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.asp *.js *.jsx *.html); do \
+	for F in $(wildcard *.asp *.js *.jsx js/*.js js/*.jsx *.html); do \
 		[ -f $(INSTALLDIR)/www/$$F ] && sed -i $$F \
 		-e "/LINUX26-BEGIN/d"	-e "/LINUX26-END/d" \
 		-e "/LINUX24-BEGIN/d"	-e "/LINUX24-END/d" \
+		-e "/MIPSR2-BEGIN/d"	-e "/MIPSR2-END/d" \
+		-e "/MIPSR1-BEGIN/d"	-e "/MIPSR1-END/d" \
 		-e "/USB-BEGIN/d"	-e "/USB-END/d" \
 		-e "/UPS-BEGIN/d"	-e "/UPS-END/d" \
+		-e "/EXTRAS-BEGIN/d"	-e "/EXTRAS-END/d" \
 		-e "/NTFS-BEGIN/d"	-e "/NTFS-END/d" \
 		-e "/SAMBA-BEGIN/d"	-e "/SAMBA-END/d" \
 		-e "/FTP-BEGIN/d"	-e "/FTP-END/d" \
@@ -366,46 +341,51 @@ endif
 		-e "/SDHC-BEGIN/d"	-e "/SDHC-END/d"\
 		-e "/HFS-BEGIN/d"	-e "/HFS-END/d"\
 		-e "/DNSCRYPT-BEGIN/d"	-e "/DNSCRYPT-END/d"\
-		-e "/STUBBY-BEGIN/d"	-e "/STUBBY-END/d"\
 		-e "/DNSSEC-BEGIN/d"	-e "/DNSSEC-END/d"\
 		-e "/TOR-BEGIN/d"	-e "/TOR-END/d"\
 		-e "/TINC-BEGIN/d"	-e "/TINC-END/d"\
+		-e "/PARAGON-BEGIN/d"	-e "/PARAGON-END/d"\
+		-e "/TUXERA-BEGIN/d"	-e "/TUXERA-END/d"\
+		-e "/MICROSD-BEGIN/d"	-e "/MICROSD-END/d"\
 		-e "/MULTIWAN-BEGIN/d"	-e "/MULTIWAN-END/d"\
 		-e "/DUALWAN-BEGIN/d"	-e "/DUALWAN-END/d"\
-		-e "/HTTPS-BEGIN/d"	-e "/HTTPS-END/d"\
-		-e "/KEYGEN-BEGIN/d"	-e "/KEYGEN-END/d"\
-		-e "/TERMLIB-BEGIN/d"	-e "/TERMLIB-END/d"\
-		-e "/TERMLIB0-BEGIN/d"	-e "/TERMLIB0-END/d"\
 		|| true; \
 	done
 
-# Use HTML compressor to compress HTML as much as possible
+# Use HTML compressor to compress HTML as much as possible sed -r -i "s,//\s?<%(.*)%>,/*! @preserve: \1*/," $$F &&
 	cd $(INSTALLDIR)/www && \
 	for F in $(wildcard *.asp ); do \
-		[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/tools/bin/html-minifier $$F --minify-css -o $$F || true; \
+			[ -f $(INSTALLDIR)/www/$$F ] && \
+			$(TOP)/www/tools/node_modules/.bin/html-minifier $$F --minify-css -o $$F || true; \
+	done
+	
+# Remove all javascript multiline comments in asp files
+	cd $(INSTALLDIR)/www && \
+	for F in $(wildcard *.asp *.html); do \
+		[ -f $(INSTALLDIR)/www/$$F ] && sed -i $$F \
+		-e :a -re 's%(.*)/\*.*\*/%\1%; ta; /\/\*/ !b; N; ba' \
+		|| true; \
 	done
 
 # Compress JAVASCRIPT files
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.js ); do \
-		[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/tools/bin/uglifyjs $$F -c -o $$F || true; \
-	done
+	for F in $(wildcard js/*.js *.js ); do \
+		[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/tools/node_modules/.bin/uglifyjs $$F -c -o $$F || true; \
+	done 
 
 # Compress CSS files
 	cd $(INSTALLDIR)/www && \
-	for F in $(wildcard *.css ); do \
-		[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/tools/bin/uglifycss $$F --output $$F || true; \
-	done
+	for F in $(wildcard css/schemes/*.css css/*.css *.css ); do \
+			[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/tools/node_modules/.bin/uglifycss $$F --output $$F || true; \
+	done 
 
-# Make sure old and debugging crap is gone
+# make sure old and debugging crap is gone
 	@rm -f $(INSTALLDIR)/www/debug.js
 	@rm -f $(INSTALLDIR)/www/*-x.*
 	@rm -f $(INSTALLDIR)/www/*-old.*
 	@rm -f $(INSTALLDIR)/www/color.css
+	@rm -f $(INSTALLDIR)/www/authorization.asp
 
-	chmod 0644 $(INSTALLDIR)/www/*
-
-# Remove C-style comments from java, asp and css files. All "control" comments have been processed by now.
-	for F in $(wildcard *.js *.jsx *.asp *.css); do \
-		[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/remcoms2.sh $(INSTALLDIR)/www/$$F c; \
-	done
+# secure the files in the installdir and change file ACLs (and preserve the existing folder ACLs)
+#	chmod 0644 $(INSTALLDIR)/www/*
+	find $(INSTALLDIR)/www/ -type f -print0 | xargs -0 chmod 644	

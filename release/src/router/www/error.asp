@@ -1,46 +1,68 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-<meta http-equiv="content-type" content="text/html;charset=utf-8">
-<meta name="robots" content="noindex,nofollow">
-<title>[<% ident(); %>] Error</title>
-<style type="text/css">
-body {
-	background:rgb(0,0,0) url(tomatousb_bg.png);
-	font:14px Tahoma,Arial,sans-serif;
-	color:rgb(255,255,255);
-}
-input {
-	width:80px;
-	height:24px;
-}
-.div {
-	width:600px;
-	height:40px;
-	background-color:rgb(47,61,64);
-	position:absolute;
-	top:0;
-	bottom:0;
-	left:0;
-	right:0;
-	text-align:center;
-	margin:auto;
-	padding:10px 10px;
-	border-radius:5px;
-}
-</style>
-</head>
-<body>
-	<div class="div">
-		<form action="">
-			<div style="padding:10px 0">
-				<script type="text/javascript">
-//	<% resmsg('Unknown error'); %>
-				document.write(resmsg);
-				</script>&nbsp;
-				<input type="button" value="Back" onclick="history.go(-1)">
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<meta name="robots" content="noindex,nofollow">
+		<title>[<% ident(); %>] Error</title>
+		<style>
+			body {
+				font-family: 'Verdana';
+				font-size: 13px;
+			}
+			.container {
+				width: 700px;
+				margin: 50px auto;
+			}
+
+			h2 {
+				font-size: 20px;
+			}
+
+			.btn {
+				font-family: Verdana;
+				display: inline-block;
+				text-align: center;
+				cursor: pointer;
+				background-image: none;
+				padding: 8px 20px;
+				margin: 0;
+				font-size: 11px;
+				font-weight: bold !important;
+				line-height: 1.42857143;
+				color: #fff !important;
+				background: #69baf2;
+				transition: 0.1s ease-out;
+				border-radius: 4px;
+				-webkit-border-radius: 4px;
+				border: 0;
+				border-bottom: 2px solid #4297d0;
+			}
+
+			.btn:hover {
+				background: #77c1f6;
+			}
+
+			.btn:active, .btn:focus {
+				transition: none;
+				margin-top: 2px;
+				border-width: 0;
+			}
+		</style>
+
+	</head>
+
+	<body>
+
+		<div class="container" style="text-align: center;">
+			<div class="row">
+				<h2>Somthing went wrong...</h2>
+				<p><script type="text/javascript">
+						//<% resmsg("Unknown error"); %>
+						document.write(resmsg);
+					</script></p>
+				<p><a class="btn btn-primary" onclick="history.go(-1)">Go Back</a></p>
 			</div>
-		</form>
-	</div>
-</body>
+		</div>
+
+	</body>
 </html>
